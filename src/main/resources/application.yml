@@ -1,1 +1,13 @@
-spring.application.name=keycloak
+server:
+  port: 8081
+spring:
+  application:
+    name: keycloak
+keycloak:
+  url: http://localhost:8080/
+  realm: marlon-example
+  admin-user: ${KEYCLOAK_ADMIN}
+  admin-password: ${KEYCLOAK_ADMIN_PASSWORD}
+  admin-client-id: admin-cli
+  realm-admin: master
+
