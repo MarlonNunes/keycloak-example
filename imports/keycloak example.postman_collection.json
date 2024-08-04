@@ -1,0 +1,312 @@
+{
+	"info": {
+		"_postman_id": "c4cd52c6-4135-4ac7-8368-0c3d64051de4",
+		"name": "keycloak example",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "11910575"
+	},
+	"item": [
+		{
+			"name": "get token",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "grant_type",
+							"value": "password",
+							"type": "text"
+						},
+						{
+							"key": "client_id",
+							"value": "app",
+							"type": "text"
+						},
+						{
+							"key": "username",
+							"value": "teste2@gmail.com",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "teste123",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8080/realms/marlon-example/protocol/openid-connect/token",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"realms",
+						"marlon-example",
+						"protocol",
+						"openid-connect",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get roles",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/admin/roles",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"admin",
+						"roles"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create-user",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firstName\" : \"Teste\",\n    \"email\" : \"teste21@gmail.com\",\n    \"lastName\" : \"Nunes\",\n    \"role\" : {\n        \"id\": \"c878814c-a4d4-47fa-b9fa-e5b183fcafad\",\n        \"name\": \"USER\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/admin/create",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"admin",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create-password",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userId\" : 4,\n    \"email\" : \"teste2@gmail.com\",\n    \"verificationCode\" : \"ffc25165-8db6-4c5d-ac34-a1d8ffd12d7e\",\n    \"password\" : \"teste123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/login/create-password",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"login",
+						"create-password"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "me",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firstName\" : \"Teste\",\n    \"email\" : \"teste2@gmail.com\",\n    \"lastName\" : \"Nunes\",\n    \"role\" : {\n        \"id\": \"c878814c-a4d4-47fa-b9fa-e5b183fcafad\",\n        \"name\": \"USER\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/login/me",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"login",
+						"me"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					"const validUntil = pm.collectionVariables.get(\"validUntil\");",
+					"",
+					"const validUntilTimestamp = validUntil ? new Date(validUntil).getTime() : 0;",
+					"",
+					"if (!isNaN(validUntilTimestamp) && Date.now() < validUntilTimestamp) {",
+					"    return;",
+					"}",
+					"",
+					"console.log(validUntil);",
+					"console.log('Token expirado, obtendo um novo token.');",
+					"",
+					"const tokenUrl = 'http://localhost:8080/realms/marlon-example/protocol/openid-connect/token';",
+					"",
+					"const body = {",
+					"    grant_type: 'password',",
+					"    client_id: 'app',",
+					"    username: pm.collectionVariables.get(\"username\"),",
+					"    password: pm.collectionVariables.get(\"password\")",
+					"};",
+					"",
+					"console.log(body)",
+					"",
+					"const headers = {",
+					"    'Content-Type' : 'application/x-www-form-urlencoded'",
+					"};",
+					"",
+					"function encodeBody(data) {",
+					"    const formBody = [];",
+					"    for(const property in data){",
+					"        const encodedKey = property;",
+					"        const encodedValue = data[property];",
+					"",
+					"        formBody.push(encodedKey + \"=\" + encodedValue);",
+					"    }",
+					"",
+					"    return formBody.join(\"&\");",
+					"}",
+					"",
+					"pm.sendRequest({",
+					"    url: tokenUrl,",
+					"    method: 'POST',",
+					"    headers: headers,",
+					"    body: {",
+					"        mode: 'urlencoded',",
+					"        urlencoded: encodeBody(body)",
+					"    }",
+					"}, (err, res) => {",
+					"    if (err) {",
+					"        console.log('Falha ao obter o token de acesso:', err);",
+					"    } else {",
+					"        const jsonResponse = res.json();",
+					"        pm.environment.set(\"token\", jsonResponse.access_token);",
+					"",
+					"        const now = new Date();",
+					"        const expiresAt = new Date(now.getTime() + jsonResponse.expires_in * 1000);",
+					"        pm.environment.set(\"validUntil\", expiresAt.toISOString());",
+					"    }",
+					"})"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "validUntil",
+			"value": "0",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "username",
+			"value": "teste123@teste.com",
+			"type": "string"
+		},
+		{
+			"key": "password",
+			"value": "example123",
+			"type": "string"
+		}
+	]
+}
