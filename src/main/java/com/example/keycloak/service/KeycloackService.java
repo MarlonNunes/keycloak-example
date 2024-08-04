@@ -1,9 +1,6 @@
 package com.example.keycloak.service;
 
-import com.example.keycloak.dto.IdNameDTO;
-import com.example.keycloak.dto.KeycloakTokenDTO;
-import com.example.keycloak.dto.SaveUserKeycloakDTO;
-import com.example.keycloak.dto.UserKeycloakDTO;
+import com.example.keycloak.dto.keycloak.*;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,30 +21,42 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class KeycloackService {
 
     @Value("${keycloak.url}")
-    private String keycloakUrl;
+    private final String keycloakUrl;
     @Value("${keycloak.realm}")
-    private String keycloakRealm;
+    private final String keycloakRealm;
     @Value("${keycloak.realm-admin}")
-    private String keycloakRealmAdmin;
+    private final String keycloakRealmAdmin;
     @Value("${keycloak.admin-user}")
-    private String user;
+    private final String user;
     @Value("${keycloak.admin-password}")
-    private String password;
+    private final String password;
     @Value("${keycloak.admin-client-id}")
-    private String adminClientId;
+    private final String adminClientId;
     private String token;
     private LocalDateTime tokenExpiration;
     private final RestTemplate restTemplate;
-    private String USERS_ENDPOINT;
+    private final String USERS_ENDPOINT;
 
-    @PostConstruct
-    private void init(){
+    public KeycloackService(RestTemplate restTemplate,
+                            @Value("${keycloak.url}") String keycloakUrl,
+                            @Value("${keycloak.realm}") String keycloakRealm,
+                            @Value("${keycloak.realm-admin}") String keycloakRealmAdmin,
+                            @Value("${keycloak.admin-user}") String user,
+                            @Value("${keycloak.admin-password}") String password,
+                            @Value("${keycloak.admin-client-id}") String adminClientId) {
+        this.restTemplate = restTemplate;
+        this.keycloakUrl = keycloakUrl;
+        this.keycloakRealm = keycloakRealm;
+        this.keycloakRealmAdmin = keycloakRealmAdmin;
+        this.user = user;
+        this.password = password;
+        this.adminClientId = adminClientId;
         USERS_ENDPOINT = "admin/realms/" + keycloakRealm + "/users";
+
     }
 
     private HttpHeaders getHeaders(){
@@ -94,7 +103,6 @@ public class KeycloackService {
         HttpEntity<SaveUserKeycloakDTO> entity = new HttpEntity<>(user, headers);
 
 
-        RestTemplate restTemplate = new RestTemplate();
         ResponseEntity<String> result = null;
 
         try{
@@ -137,11 +145,10 @@ public class KeycloackService {
         return ResponseEntity.ok(users.get(0));
     }
 
-    public Object assignRoles(String userKeycloakId, List<IdNameDTO> roles){
+    public ResponseEntity<String> assignRoles(String userKeycloakId, List<IdNameDTO> roles){
         final String path = "admin/realms/" + keycloakRealm + "/users/" + userKeycloakId + "/role-mappings/realm";
         HttpHeaders headers = this.getHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        RestTemplate restTemplate = new RestTemplate();
         HttpEntity<List<IdNameDTO>> entity = new HttpEntity<>(roles, headers);
 
         ResponseEntity<String> result = null;
@@ -154,5 +161,47 @@ public class KeycloackService {
         }
 
         return result;
+    }
+
+    public ResponseEntity<Void> resetPassword(String userKeycloakId, String credentialId, String password){
+        final String path = "admin/realms/" + keycloakRealm + "/users/" + userKeycloakId + "/reset-password";
+
+        HttpHeaders headers = this.getHeaders();
+
+        HttpEntity<CredentialKeycloakDTO> entity = new HttpEntity<>(CredentialKeycloakDTO.update(credentialId, password), headers);
+
+        ResponseEntity<Void> result = null;
+
+        try{
+            result = restTemplate.exchange(this.keycloakUrl + path, HttpMethod.PUT, entity, Void.class);
+        }catch (HttpClientErrorException e){
+            log.error("An error occurred while resetting the user password: {}", userKeycloakId, e);
+            throw new ResponseStatusException(e.getStatusCode(), "keycloak.error.users.reset-password");
+        }
+
+        return result;
+    }
+
+    public ResponseEntity<List<IdNameDTO>> getAllRoles(){
+        final String path = "admin/realms/" + this.keycloakRealm + "/roles";
+
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(this.keycloakUrl + path)
+                .queryParam("first", 0)
+                .queryParam("max", 100);
+
+
+        HttpHeaders headers = this.getHeaders();
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+
+        ResponseEntity<IdNameDTO[]> result = null;
+        try {
+            result = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity,  IdNameDTO[].class);
+        } catch (HttpClientErrorException e){
+            log.error("An error occurred when fetching roles", e);
+            throw new ResponseStatusException(e.getStatusCode(), "keycloak.error.roles.get-all");
+        }
+
+        return ResponseEntity.ok(List.of(result.getBody()));
     }
 }

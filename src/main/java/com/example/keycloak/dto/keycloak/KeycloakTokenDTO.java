@@ -1,4 +1,4 @@
-package com.example.keycloak.dto;
+package com.example.keycloak.dto.keycloak;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
