@@ -1,0 +1,49 @@
+services:
+  keycloak:
+    env_file:
+      - .env
+    image: quay.io/keycloak/keycloak
+    container_name: "keycloak"
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_DB: mysql
+      KC_DB_USERNAME: root
+      KC_DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      KC_DB_URL: jdbc:mysql://mysql:3306/keycloack?createDatabaseIfNotExist=true
+    volumes:
+      - ./imports:/opt/keycloak/data/import
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 800M
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+    restart: always
+    command:
+      - start-dev
+      - --import-realm
+  mysql:
+    env_file:
+      - .env
+    image: mysql:5.7
+    container_name: "mysql"
+    restart: always
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - "mysql:/var/lib/mysql"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 300M
+volumes:
+  mysql:
